@@ -427,25 +427,15 @@ func (c *Operator) keyFunc(obj interface{}) (string, bool) {
 }
 
 func (c *Operator) handlePrometheusAdd(obj interface{}) {
-	key, ok := c.keyFunc(obj)
-	if !ok {
-		return
-	}
-
-	level.Debug(c.logger).Log("msg", "Prometheus added", "key", key)
+	level.Debug(c.logger).Log("msg", "Prometheus added")
 	c.triggerByCounter.WithLabelValues(monitoringv1.PrometheusesKind, "add").Inc()
-	c.enqueue(key)
+	c.enqueue(obj.(*monitoringv1.Prometheus))
 }
 
 func (c *Operator) handlePrometheusDelete(obj interface{}) {
-	key, ok := c.keyFunc(obj)
-	if !ok {
-		return
-	}
-
-	level.Debug(c.logger).Log("msg", "Prometheus deleted", "key", key)
+	level.Debug(c.logger).Log("msg", "Prometheus deleted")
 	c.triggerByCounter.WithLabelValues(monitoringv1.PrometheusesKind, "delete").Inc()
-	c.enqueue(key)
+	// do not enqueue, dependent resources are cleaned up by K8s via OwnerReferences
 }
 
 func (c *Operator) handlePrometheusUpdate(old, cur interface{}) {
@@ -453,14 +443,9 @@ func (c *Operator) handlePrometheusUpdate(old, cur interface{}) {
 		return
 	}
 
-	key, ok := c.keyFunc(cur)
-	if !ok {
-		return
-	}
-
-	level.Debug(c.logger).Log("msg", "Prometheus updated", "key", key)
+	level.Debug(c.logger).Log("msg", "Prometheus updated")
 	c.triggerByCounter.WithLabelValues(monitoringv1.PrometheusesKind, "update").Inc()
-	c.enqueue(key)
+	c.enqueue(cur.(*monitoringv1.Prometheus))
 }
 
 func (c *Operator) reconcileNodeEndpoints(stopc <-chan struct{}) {
@@ -757,20 +742,8 @@ func (c *Operator) getObject(obj interface{}) (metav1.Object, bool) {
 
 // enqueue adds a key to the queue. If obj is a key already it gets added
 // directly. Otherwise, the key is extracted via keyFunc.
-func (c *Operator) enqueue(obj interface{}) {
-	if obj == nil {
-		return
-	}
-
-	key, ok := obj.(string)
-	if !ok {
-		key, ok = c.keyFunc(obj)
-		if !ok {
-			return
-		}
-	}
-
-	c.queue.Add(key)
+func (c *Operator) enqueue(p *monitoringv1.Prometheus) {
+	c.queue.Add(p)
 }
 
 // enqueueForNamespace enqueues all Prometheus object keys that belong to the
@@ -850,21 +823,23 @@ func (c *Operator) worker() {
 }
 
 func (c *Operator) processNextWorkItem() bool {
-	key, quit := c.queue.Get()
+	obj, quit := c.queue.Get()
 	if quit {
 		return false
 	}
-	defer c.queue.Done(key)
+	p := obj.(*monitoringv1.Prometheus)
+	defer c.queue.Done(p)
 
-	err := c.sync(key.(string))
+	err := c.sync(p)
 	if err == nil {
-		c.queue.Forget(key)
+		c.queue.Forget(p)
 		return true
 	}
 
 	c.reconcileErrorsCounter.With(prometheus.Labels{}).Inc()
+	key, _ := cache.MetaNamespaceKeyFunc(p)
 	utilruntime.HandleError(errors.Wrap(err, fmt.Sprintf("Sync %q failed", key)))
-	c.queue.AddRateLimited(key)
+	c.queue.AddRateLimited(p)
 
 	return true
 }
@@ -944,17 +919,7 @@ func (c *Operator) handleStatefulSetUpdate(oldo, curo interface{}) {
 	}
 }
 
-func (c *Operator) sync(key string) error {
-	obj, exists, err := c.promInf.GetIndexer().GetByKey(key)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		// Dependent resources are cleaned up by K8s via OwnerReferences
-		return nil
-	}
-
-	p := obj.(*monitoringv1.Prometheus)
+func (c *Operator) sync(p *monitoringv1.Prometheus) error {
 	p = p.DeepCopy()
 	p.APIVersion = monitoringv1.SchemeGroupVersion.String()
 	p.Kind = monitoringv1.PrometheusesKind
@@ -963,6 +928,7 @@ func (c *Operator) sync(key string) error {
 		return nil
 	}
 
+	key, _ := cache.MetaNamespaceKeyFunc(p)
 	level.Info(c.logger).Log("msg", "sync prometheus", "key", key)
 
 	ruleConfigMapNames, err := c.createOrUpdateRuleConfigMaps(p)
@@ -1002,6 +968,8 @@ func (c *Operator) sync(key string) error {
 	}
 
 	ssetClient := c.kclient.AppsV1beta2().StatefulSets(p.Namespace)
+	var obj interface{}
+	var exists bool
 	// Ensure we have a StatefulSet running Prometheus deployed.
 	obj, exists, err = c.ssetInf.GetIndexer().GetByKey(prometheusKeyToStatefulSetKey(key))
 	if err != nil {
