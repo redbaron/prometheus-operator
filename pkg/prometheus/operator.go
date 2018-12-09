@@ -743,7 +743,7 @@ func (c *Operator) getObject(obj interface{}) (metav1.Object, bool) {
 // enqueue adds a key to the queue. If obj is a key already it gets added
 // directly. Otherwise, the key is extracted via keyFunc.
 func (c *Operator) enqueue(p *monitoringv1.Prometheus) {
-	c.queue.Add(p)
+	c.queue.Add(p.DeepCopy())
 }
 
 // enqueueForNamespace enqueues all Prometheus object keys that belong to the
@@ -920,7 +920,6 @@ func (c *Operator) handleStatefulSetUpdate(oldo, curo interface{}) {
 }
 
 func (c *Operator) sync(p *monitoringv1.Prometheus) error {
-	p = p.DeepCopy()
 	p.APIVersion = monitoringv1.SchemeGroupVersion.String()
 	p.Kind = monitoringv1.PrometheusesKind
 
