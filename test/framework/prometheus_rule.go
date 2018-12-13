@@ -22,14 +22,15 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+        "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func (f *Framework) MakeBasicRule(ns, name string, groups []monitoringv1.RuleGroup) *monitoringv1.PrometheusRule {
+func (f *Framework) MakeBasicRule(ns v1.Namespace, name string, groups []monitoringv1.RuleGroup) *monitoringv1.PrometheusRule {
 	return &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: ns,
+			Namespace: ns.Name,
 			Labels: map[string]string{
 				"role": "rulefile",
 			},
@@ -40,16 +41,16 @@ func (f *Framework) MakeBasicRule(ns, name string, groups []monitoringv1.RuleGro
 	}
 }
 
-func (f *Framework) CreateRule(ns string, ar *monitoringv1.PrometheusRule) (*monitoringv1.PrometheusRule, error) {
-	result, err := f.MonClientV1.PrometheusRules(ns).Create(ar)
+func (f *Framework) CreateRule(ar *monitoringv1.PrometheusRule) (*monitoringv1.PrometheusRule, error) {
+	result, err := f.MonClientV1.PrometheusRules(ar.Namespace).Create(ar)
 	if err != nil {
-		return nil, fmt.Errorf("creating %v RuleFile failed: %v", ar.Name, err)
+		return nil, fmt.Errorf("creating %v/%v RuleFile failed: %v", ar.Namespace,ar.Name, err)
 	}
 
 	return result, nil
 }
 
-func (f *Framework) MakeAndCreateFiringRule(ns, name, alertName string) (*monitoringv1.PrometheusRule, error) {
+func (f *Framework) MakeAndCreateFiringRule(ns v1.Namespace, name, alertName string) (*monitoringv1.PrometheusRule, error) {
 	groups := []monitoringv1.RuleGroup{
 		{
 			Name: alertName,
@@ -63,7 +64,7 @@ func (f *Framework) MakeAndCreateFiringRule(ns, name, alertName string) (*monito
 	}
 	file := f.MakeBasicRule(ns, name, groups)
 
-	result, err := f.CreateRule(ns, file)
+	result, err := f.CreateRule(file)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +86,8 @@ func (f *Framework) WaitForRule(ns, name string) error {
 	})
 }
 
-func (f *Framework) UpdateRule(ns string, ar *monitoringv1.PrometheusRule) (*monitoringv1.PrometheusRule, error) {
-	result, err := f.MonClientV1.PrometheusRules(ns).Update(ar)
+func (f *Framework) UpdateRule(ar *monitoringv1.PrometheusRule) (*monitoringv1.PrometheusRule, error) {
+	result, err := f.MonClientV1.PrometheusRules(ar.Namespace).Update(ar)
 	if err != nil {
 		return nil, fmt.Errorf("updating %v RuleFile failed: %v", ar.Name, err)
 	}
@@ -94,10 +95,10 @@ func (f *Framework) UpdateRule(ns string, ar *monitoringv1.PrometheusRule) (*mon
 	return result, nil
 }
 
-func (f *Framework) DeleteRule(ns string, r string) error {
-	err := f.MonClientV1.PrometheusRules(ns).Delete(r, &metav1.DeleteOptions{})
+func (f *Framework) DeleteRule(r *monitoringv1.PrometheusRule) error {
+	err := f.MonClientV1.PrometheusRules(r.Namespace).Delete(r.Name, &metav1.DeleteOptions{})
 	if err != nil {
-		return fmt.Errorf("deleteing %v Prometheus rule in namespace %v failed: %v", r, ns, err.Error())
+		return fmt.Errorf("deleteing %v Prometheus rule in namespace %v failed: %v", r.Name, r.Namespace, err.Error())
 	}
 
 	return nil

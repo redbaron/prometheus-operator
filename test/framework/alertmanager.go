@@ -46,10 +46,11 @@ receivers:
   - url: 'http://alertmanagerwh:30500/'
 `
 
-func (f *Framework) MakeBasicAlertmanager(name string, replicas int32) *monitoringv1.Alertmanager {
+func (f *Framework) MakeBasicAlertmanager(ns Namespaces, name string, replicas int32) *monitoringv1.Alertmanager {
 	return &monitoringv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+                        Namespace: ns.Alertmanager.Name,
 		},
 		Spec: monitoringv1.AlertmanagerSpec{
 			Replicas: &replicas,
@@ -58,10 +59,11 @@ func (f *Framework) MakeBasicAlertmanager(name string, replicas int32) *monitori
 	}
 }
 
-func (f *Framework) MakeAlertmanagerService(name, group string, serviceType v1.ServiceType) *v1.Service {
+func (f *Framework) MakeAlertmanagerService(a *monitoringv1.Alertmanager, group string, serviceType v1.ServiceType) *v1.Service {
 	service := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("alertmanager-%s", name),
+			Name: fmt.Sprintf("alertmanager-%s", a.Name),
+                        Namespace: a.Namespace,
 			Labels: map[string]string{
 				"group": group,
 			},
@@ -76,7 +78,7 @@ func (f *Framework) MakeAlertmanagerService(name, group string, serviceType v1.S
 				},
 			},
 			Selector: map[string]string{
-				"alertmanager": name,
+				"alertmanager": a.Name,
 			},
 		},
 	}
@@ -110,23 +112,23 @@ func (f *Framework) AlertmanagerConfigSecret(ns, name string) (*v1.Secret, error
 	return s, nil
 }
 
-func (f *Framework) CreateAlertmanagerAndWaitUntilReady(ns string, a *monitoringv1.Alertmanager) (*monitoringv1.Alertmanager, error) {
+func (f *Framework) CreateAlertmanagerAndWaitUntilReady(a *monitoringv1.Alertmanager) (*monitoringv1.Alertmanager, error) {
 	amConfigSecretName := fmt.Sprintf("alertmanager-%s", a.Name)
-	s, err := f.AlertmanagerConfigSecret(ns, amConfigSecretName)
+	s, err := f.AlertmanagerConfigSecret(a.Namespace, amConfigSecretName)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("making alertmanager config secret %v failed", amConfigSecretName))
 	}
-	_, err = f.KubeClient.CoreV1().Secrets(ns).Create(s)
+	_, err = f.KubeClient.CoreV1().Secrets(a.Namespace).Create(s)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("creating alertmanager config secret %v failed", s.Name))
 	}
 
-	a, err = f.MonClientV1.Alertmanagers(ns).Create(a)
+	a, err = f.MonClientV1.Alertmanagers(a.Namespace).Create(a)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("creating alertmanager %v failed", a.Name))
 	}
 
-	return a, f.WaitForAlertmanagerReady(ns, a.Name, int(*a.Spec.Replicas))
+	return a, f.WaitForAlertmanagerReady(a.Namespace, a.Name, int(*a.Spec.Replicas))
 }
 
 func (f *Framework) WaitForAlertmanagerReady(ns, name string, replicas int) error {
@@ -141,15 +143,15 @@ func (f *Framework) WaitForAlertmanagerReady(ns, name string, replicas int) erro
 	return errors.Wrap(err, fmt.Sprintf("failed to create an Alertmanager cluster (%s) with %d instances", name, replicas))
 }
 
-func (f *Framework) UpdateAlertmanagerAndWaitUntilReady(ns string, a *monitoringv1.Alertmanager) (*monitoringv1.Alertmanager, error) {
-	a, err := f.MonClientV1.Alertmanagers(ns).Update(a)
+func (f *Framework) UpdateAlertmanagerAndWaitUntilReady(a *monitoringv1.Alertmanager) (*monitoringv1.Alertmanager, error) {
+	a, err := f.MonClientV1.Alertmanagers(a.Namespace).Update(a)
 	if err != nil {
 		return nil, err
 	}
 
 	err = WaitForPodsReady(
 		f.KubeClient,
-		ns,
+		a.Namespace,
 		5*time.Minute,
 		int(*a.Spec.Replicas),
 		alertmanager.ListOptions(a.Name),
@@ -161,27 +163,27 @@ func (f *Framework) UpdateAlertmanagerAndWaitUntilReady(ns string, a *monitoring
 	return a, nil
 }
 
-func (f *Framework) DeleteAlertmanagerAndWaitUntilGone(ns, name string) error {
-	_, err := f.MonClientV1.Alertmanagers(ns).Get(name, metav1.GetOptions{})
+func (f *Framework) DeleteAlertmanagerAndWaitUntilGone(a *monitoringv1.Alertmanager) error {
+	_, err := f.MonClientV1.Alertmanagers(a.Namespace).Get(a.Name, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("requesting Alertmanager tpr %v failed", name))
+		return errors.Wrap(err, fmt.Sprintf("requesting Alertmanager tpr %v failed", a.Name))
 	}
 
-	if err := f.MonClientV1.Alertmanagers(ns).Delete(name, nil); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("deleting Alertmanager tpr %v failed", name))
+	if err := f.MonClientV1.Alertmanagers(a.Namespace).Delete(a.Name, nil); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("deleting Alertmanager tpr %v failed", a.Name))
 	}
 
 	if err := WaitForPodsReady(
 		f.KubeClient,
-		ns,
+		a.Namespace,
 		f.DefaultTimeout,
 		0,
-		alertmanager.ListOptions(name),
+		alertmanager.ListOptions(a.Name),
 	); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("waiting for Alertmanager tpr (%s) to vanish timed out", name))
+		return errors.Wrap(err, fmt.Sprintf("waiting for Alertmanager tpr (%s) to vanish timed out", a.Name))
 	}
 
-	return f.KubeClient.CoreV1().Secrets(ns).Delete(fmt.Sprintf("alertmanager-%s", name), nil)
+	return f.KubeClient.CoreV1().Secrets(a.Namespace).Delete(fmt.Sprintf("alertmanager-%s", a.Name), nil)
 }
 
 func amImage(version string) string {

@@ -45,8 +45,8 @@ func (f *Framework) PrintPodLogs(ns, p string) error {
 
 // GetPodRestartCount returns a map of container names and their restart counts for
 // a given pod.
-func (f *Framework) GetPodRestartCount(ns, podName string) (map[string]int32, error) {
-	pod, err := f.KubeClient.CoreV1().Pods(ns).Get(podName, metav1.GetOptions{})
+func (f *Framework) GetPodRestartCount(pod *v1.Pod) (map[string]int32, error) {
+	pod, err := f.KubeClient.CoreV1().Pods(pod.Namespace).Get(pod.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve pod to get restart count")
 	}

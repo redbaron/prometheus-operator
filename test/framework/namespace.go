@@ -24,6 +24,18 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+
+type Namespaces struct {
+   Operator *v1.Namespace
+   Prometheus *v1.Namespace
+   Alertmanager *v1.Namespace
+   Rules []*v1.Namespace
+}
+
+type NamespacesPlan struct {
+   Namespaces
+}
+
 func CreateNamespace(kubeClient kubernetes.Interface, name string) (*v1.Namespace, error) {
 	namespace, err := kubeClient.Core().Namespaces().Create(&v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -36,19 +48,41 @@ func CreateNamespace(kubeClient kubernetes.Interface, name string) (*v1.Namespac
 	return namespace, nil
 }
 
-func (ctx *TestCtx) CreateNamespace(t *testing.T, kubeClient kubernetes.Interface) string {
-	name := ctx.GetObjID()
-	if _, err := CreateNamespace(kubeClient, name); err != nil {
+func (ctx TestCtx) NewNamespaces(t *testing.T, kubeClient kubernetes.Interface, plan NamespacesPlan) Namespaces {
+       created := make(map[*v1.Namespace]struct{})  // same pointer Namespace used in plan multiple times will be created just once
+       var ns Namespaces = plan.Namespaces
+  
+       for _, nsPlanned := range  append([]*v1.Namespace{plan.Operator, plan.Prometheus, plan.Alertmanager}, plan.Rules...) {
+             if _, ok := created[nsPlanned]; ok {
+                 continue
+             }
+             *nsPlanned = *ctx.CreateNamespace(t, kubeClient)  //this updates content of the pointer inside result ns
+             created[nsPlanned] = struct{}{}
+       }
+
+       for _, ruleNs := range ns.Rules {
+            if err := AddLabelsToNamespace(kubeClient, ruleNs.Name, map[string]string{"for-prometheus": ns.Prometheus.Name}); err != nil {
+                 t.Fatal(err)
+            }
+       }
+       return ns
+}
+
+func (ctx *TestCtx) CreateNamespace(t *testing.T, kubeClient kubernetes.Interface) *v1.Namespace {
+        var ns *v1.Namespace
+        var err error
+
+	if ns, err = CreateNamespace(kubeClient, ctx.GetObjID()); err != nil {
 		t.Fatal(err)
 	}
 
 	namespaceFinalizerFn := func() error {
-		return DeleteNamespace(kubeClient, name)
+		return DeleteNamespace(kubeClient, ns.Name)
 	}
 
 	ctx.AddFinalizerFn(namespaceFinalizerFn)
 
-	return name
+	return ns
 }
 
 func DeleteNamespace(kubeClient kubernetes.Interface, name string) error {

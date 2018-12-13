@@ -88,7 +88,7 @@ func SetupNginxIngressControllerIncDefaultBackend(kubeClient kubernetes.Interfac
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("creating http backend service %v failed", service.Name))
 	}
-	if err := WaitForServiceReady(kubeClient, namespace, service.Name); err != nil {
+	if err := WaitForServiceReady(kubeClient, service); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("waiting for http backend service %v timed out", service.Name))
 	}
 

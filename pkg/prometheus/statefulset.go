@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	governingServiceName     = "prometheus-operated"
+	GoverningServiceName     = "prometheus-operated"
 	DefaultPrometheusVersion = "v2.5.0"
 	DefaultThanosVersion     = "v0.1.0"
 	defaultRetention         = "24h"
@@ -254,7 +254,7 @@ func makeConfigSecret(p *monitoringv1.Prometheus, config Config) *v1.Secret {
 func makeStatefulSetService(p *monitoringv1.Prometheus, config Config) *v1.Service {
 	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: governingServiceName,
+			Name: GoverningServiceName,
 			OwnerReferences: []metav1.OwnerReference{
 				metav1.OwnerReference{
 					Name:       p.GetName(),
@@ -753,7 +753,7 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 	}
 
 	return &appsv1.StatefulSetSpec{
-		ServiceName:         governingServiceName,
+		ServiceName:         GoverningServiceName,
 		Replicas:            p.Spec.Replicas,
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
