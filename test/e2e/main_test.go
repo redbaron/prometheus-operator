@@ -66,20 +66,21 @@ func TestAllNS(t *testing.T) {
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup(t)
 
-	ns := &v1.Namespace{}
-        nss := ctx.NewNamespaces(t, framework.KubeClient, operatorFramework.NamespacesPlan{operatorFramework.Namespaces{ns, ns, ns, []*v1.Namespace{ns}}})
-
+        opNs := ctx.CreateNamespace(t, framework.KubeClient)
 	err := framework.CreatePrometheusOperator(nss, *opImage)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	ns := &v1.Namespace{}
+        nsPlan := operatorFramework.NamespacesPlan{operatorFramework.Namespaces{ns, ns, ns, []*v1.Namespace{ns}}}
 
 	// t.Run blocks until the function passed as the second argument (f) returns or
 	// calls t.Parallel to become a parallel test. Run reports whether f succeeded
 	// (or at least did not fail before calling t.Parallel). As all tests in
 	// testAllNS are parallel, the defered ctx.Cleanup above would be run before
 	// all tests finished. Wrapping it in testAllNS fixes this.
-	t.Run("x", func(t *testing.T) { testAllNS(t, nss) })
+	t.Run("x", func(t *testing.T) { testAllNS(t, nsPlan) })
 
 	// Check if Prometheus Operator ever restarted.
 	opts := metav1.ListOptions{LabelSelector: fields.SelectorFromSet(fields.Set(map[string]string{

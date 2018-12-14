@@ -66,7 +66,7 @@ func (f *Framework) MakeBasicPrometheus(ns Namespaces, name, group string, repli
                   needNSSelector = true
              }
              if n.Labels["for-prometheus"] != ns.Prometheus.Name {
-                  panic("Rules namsespaces in test framework must be labelled with {'for-prometheus': <prometheus_namespace_name>}")
+                  panic(fmt.Sprintf("Rules namsespaces in test framework must be labelled with {'for-prometheus': <prometheus_namespace_name>} %v", n.ObjectMeta))
              }
         }
 

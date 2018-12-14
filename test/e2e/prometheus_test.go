@@ -44,7 +44,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func testPromCreateDeleteCluster(t *testing.T, ns testFramework.Namespaces) {
+func testPromCreateDeleteCluster(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -64,7 +64,7 @@ func testPromCreateDeleteCluster(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromScaleUpDownCluster(t *testing.T, ns testFramework.Namespaces) {
+func testPromScaleUpDownCluster(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -91,7 +91,7 @@ func testPromScaleUpDownCluster(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromNoServiceMonitorSelector(t *testing.T, ns testFramework.Namespaces) {
+func testPromNoServiceMonitorSelector(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -106,7 +106,7 @@ func testPromNoServiceMonitorSelector(t *testing.T, ns testFramework.Namespaces)
 	}
 }
 
-func testPromVersionMigration(t *testing.T, ns testFramework.Namespaces) {
+func testPromVersionMigration(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -136,7 +136,7 @@ func testPromVersionMigration(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromResourceUpdate(t *testing.T, ns testFramework.Namespaces) {
+func testPromResourceUpdate(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -200,7 +200,7 @@ func testPromResourceUpdate(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromStorageUpdate(t *testing.T, ns testFramework.Namespaces) {
+func testPromStorageUpdate(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -260,7 +260,7 @@ func testPromStorageUpdate(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromReloadConfig(t *testing.T, ns testFramework.Namespaces) {
+func testPromReloadConfig(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -340,7 +340,7 @@ scrape_configs:
 	}
 }
 
-func testPromAdditionalScrapeConfig(t *testing.T, ns testFramework.Namespaces) {
+func testPromAdditionalScrapeConfig(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -398,7 +398,7 @@ func testPromAdditionalScrapeConfig(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromAdditionalAlertManagerConfig(t *testing.T, ns testFramework.Namespaces) {
+func testPromAdditionalAlertManagerConfig(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -479,7 +479,7 @@ func testPromAdditionalAlertManagerConfig(t *testing.T, ns testFramework.Namespa
 	}
 }
 
-func testPromReloadRules(t *testing.T, ns testFramework.Namespaces) {
+func testPromReloadRules(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -536,7 +536,7 @@ func testPromReloadRules(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromMultiplePrometheusRulesSameNS(t *testing.T, ns testFramework.Namespaces) {
+func testPromMultiplePrometheusRulesSameNS(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -575,7 +575,7 @@ func testPromMultiplePrometheusRulesSameNS(t *testing.T, ns testFramework.Namesp
 	}
 }
 
-func testPromMultiplePrometheusRulesDifferentNS(t *testing.T, ns testFramework.Namespaces) {
+func testPromMultiplePrometheusRulesDifferentNS(t *testing.T, ns testFramework.NamespacesPlan) {
         t.Skip("asess this one, it should be covered just by calling it with 2 different ns.Rule")
 	t.Parallel()
 
@@ -634,7 +634,7 @@ func testPromMultiplePrometheusRulesDifferentNS(t *testing.T, ns testFramework.N
 */
 }
 
-func testPromRulesExceedingConfigMapLimit(t *testing.T, ns testFramework.Namespaces) {
+func testPromRulesExceedingConfigMapLimit(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -734,7 +734,7 @@ func generateHugePrometheusRule(ns v1.Namespace, identifier string) *monitoringv
 
 // Make sure the Prometheus operator only updates the Prometheus config secret
 // and the Prometheus rules configmap on relevant changes
-func testPromOnlyUpdatedOnRelevantChanges(t *testing.T, ns testFramework.Namespaces) {
+func testPromOnlyUpdatedOnRelevantChanges(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	testCTX := framework.NewTestCtx(t)
@@ -922,7 +922,7 @@ func testPromOnlyUpdatedOnRelevantChanges(t *testing.T, ns testFramework.Namespa
 	}
 }
 
-func testPromWhenDeleteCRDCleanUpViaOwnerRef(t *testing.T, ns testFramework.Namespaces) {
+func testPromWhenDeleteCRDCleanUpViaOwnerRef(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -956,7 +956,7 @@ func testPromWhenDeleteCRDCleanUpViaOwnerRef(t *testing.T, ns testFramework.Name
 	}
 }
 
-func testPromDiscovery(t *testing.T, ns testFramework.Namespaces) {
+func testPromDiscovery(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -995,7 +995,7 @@ func testPromDiscovery(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromAlertmanagerDiscovery(t *testing.T, ns testFramework.Namespaces) {
+func testPromAlertmanagerDiscovery(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -1046,7 +1046,7 @@ func testPromAlertmanagerDiscovery(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromExposingWithKubernetesAPI(t *testing.T, ns testFramework.Namespaces) {
+func testPromExposingWithKubernetesAPI(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -1072,7 +1072,7 @@ func testPromExposingWithKubernetesAPI(t *testing.T, ns testFramework.Namespaces
 	}
 }
 
-func testPromDiscoverTargetPort(t *testing.T, ns testFramework.Namespaces) {
+func testPromDiscoverTargetPort(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -1135,7 +1135,7 @@ func testPromDiscoverTargetPort(t *testing.T, ns testFramework.Namespaces) {
    - framework.MakeBasicPrometheus should add Smon namespace selector for every rules
      Namespace which differs from Prometheus namespace
    - Change calls to MakeBasicServiceMonitor to pass ns.Rules[0]
-func testPromOpMatchPromAndServMonInDiffNSs(t *testing.T, ns testFramework.Namespaces) {
+func testPromOpMatchPromAndServMonInDiffNSs(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -1191,7 +1191,7 @@ func testPromOpMatchPromAndServMonInDiffNSs(t *testing.T, ns testFramework.Names
 }
 */
 
-func testThanos(t *testing.T, ns testFramework.Namespaces) {
+func testThanos(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -1292,7 +1292,7 @@ func testThanos(t *testing.T, ns testFramework.Namespaces) {
 	}
 }
 
-func testPromGetBasicAuthSecret(t *testing.T, ns testFramework.Namespaces) {
+func testPromGetBasicAuthSecret(t *testing.T, ns testFramework.NamespacesPlan) {
 	t.Parallel()
 
 	ctx := framework.NewTestCtx(t)
@@ -1391,7 +1391,7 @@ func testPromGetBasicAuthSecret(t *testing.T, ns testFramework.Namespaces) {
 // Prometheus Operator. The Prometheus Operator internally treats watching a
 // single namespace different than watching multiple namespaces, hence the two
 // sub-tests.
-func testOperatorNSScope(t *testing.T, ns testFramework.Namespaces) {
+func testOperatorNSScope(t *testing.T, ns testFramework.NamespacesPlan) {
 	name := "test"
 	firtAlertName := "firstAlert"
 	secondAlertName := "secondAlert"
@@ -1404,7 +1404,7 @@ func testOperatorNSScope(t *testing.T, ns testFramework.Namespaces) {
 
 
         // attach labels as for normal Rules namespace, but we expect ServiceMonitors to be not picked up there
-        err := testFramework.AddLabelsToNamespace(framework.KubeClient, arbitraryNS.Name, map[string]string{"for-prometheus": ns.Rules[0].Labels["for-prometheus"]})
+        err := testFramework.AddLabelsToNamespace(framework.KubeClient, arbitraryNS, map[string]string{"for-prometheus": ns.Rules[0].Labels["for-prometheus"]})
         if err != nil {
                 t.Fatal(err)
         }

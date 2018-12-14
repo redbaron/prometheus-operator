@@ -61,7 +61,7 @@ func (ctx TestCtx) NewNamespaces(t *testing.T, kubeClient kubernetes.Interface, 
        }
 
        for _, ruleNs := range ns.Rules {
-            if err := AddLabelsToNamespace(kubeClient, ruleNs.Name, map[string]string{"for-prometheus": ns.Prometheus.Name}); err != nil {
+            if err := AddLabelsToNamespace(kubeClient, ruleNs, map[string]string{"for-prometheus": ns.Prometheus.Name}); err != nil {
                  t.Fatal(err)
             }
        }
@@ -89,24 +89,25 @@ func DeleteNamespace(kubeClient kubernetes.Interface, name string) error {
 	return kubeClient.Core().Namespaces().Delete(name, nil)
 }
 
-func AddLabelsToNamespace(kubeClient kubernetes.Interface, name string, additionalLabels map[string]string) error {
-	ns, err := kubeClient.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+func AddLabelsToNamespace(kubeClient kubernetes.Interface, ns *v1.Namespace, additionalLabels map[string]string) error {
+	n, err := kubeClient.CoreV1().Namespaces().Get(ns.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if ns.Labels == nil {
-		ns.Labels = map[string]string{}
+	if n.Labels == nil {
+		n.Labels = map[string]string{}
 	}
 
 	for k, v := range additionalLabels {
-		ns.Labels[k] = v
+		n.Labels[k] = v
 	}
 
-	_, err = kubeClient.CoreV1().Namespaces().Update(ns)
+	n, err = kubeClient.CoreV1().Namespaces().Update(n)
 	if err != nil {
 		return err
 	}
 
+        *ns = *n
 	return nil
 }
